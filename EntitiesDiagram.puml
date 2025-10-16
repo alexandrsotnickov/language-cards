@@ -1,0 +1,140 @@
+@startuml Диаграмма классов
+hide circle
+skinparam classAttributeIconSize 0
+
+' Классы из вашего C# (упрощенные)
+class Card{
+  +string Word
+  +string Transcription
+  +string Translation
+  +Image DescriptivePicture
+}
+
+interface ICardStudyRepository {
+  +void Add(CardStudy cardStudy)
+  +void Update(CardStudy cardStudy)
+  +void Delete(CardStudy cardStudy)
+  +CardStudy Get(int id)
+}
+CardRepository .> ICardRepository : implements
+
+class CardStudyRepository{
+  +void Add(CardStudy cardStudy)
+  +void Update(CardStudy cardStudy)
+  +void Delete(CardStudy cardStudy)
+  +CardStudy Get(int id)
+}
+
+class CardManager{
+  
+  +void Add(CardStudy cardStudy)
+  +void Update(CardStudy cardStudy)
+  +void Delete(CardStudy cardStudy)
+  +CardStudy Get()
+}
+
+class CardStudy {
+  +int Id
+  +User Owner
+  +Card Card
+  +CardStatuses Status
+}
+
+class User{
+  +string FirstName 
+  +string Lastname 
+  +string Login 
+  +string Password
+}
+
+class UserManager{
+  +void Add(User user)
+  +void Update(User user)
+  +void Delete(User user)
+  +bool Get(string login, string password)
+  
+}
+
+interface IUserRepository {
+  +void Add(User user)
+  +void Update(User user)
+  +void Delete(User user)
+  +User Get(string login)
+}
+UserRepository .> IUserRepository : implements
+
+class UserRepository{
+  +void Add(User user)
+  +void Update(User user)
+  +void Delete(User user)
+  +User Get(string login)
+}
+
+enum CardStatuses
+{
+  Learned
+  NotStudied
+}
+
+CardManager *-- CardStudy
+CardStudy --> User : Owner
+CardStudy --> Card : Card
+CardStudy --> CardStatuses : Status
+UserManager *-- User
+
+' class Category{
+'   +string Title
+'   +string Description
+' }
+
+' class CategoryManager{
+'    +void Add()
+'    +void Update()
+'    +void Delete()
+' }
+
+' class Category {
+'   + int CategoryId <<PK>>
+'   + string Name
+' }
+
+' class DataItem {
+'   + int Id <<PK>>
+'   + string Name
+'   + int UserId <<FK>>
+'   + void Save()
+' }
+
+' class Address {
+'   + string Street
+'   + string City
+'   + void Validate()
+' }
+
+' ' Ассоциация: простая связь (plain line)
+
+
+' ' Агрегация: пустой ромб на стороне "целого" (o--)
+' User o-- Address : "1..1"  ' User агрегирует Address (Address может жить самостоятельно)
+
+' ' Композиция: закрашенный ромб (*--)
+ 
+
+' ' Наследование: стрелка с треугольником (<|-- или --|>)
+' ' class BaseEntity { ... }  ' Определите базовый класс
+' ' User <|-- BaseEntity  ' User наследует от BaseEntity
+' DataItem <|-- User  
+
+' ' Зависимость: пунктирная стрелка (...>)
+' DataItem ..> User : "uses"  ' DataItem зависит от User (метод использует объект User)
+
+' ' Реализация: пунктирная линия с треугольником (..|>)
+' class ILogger { 
+'   + void Log(string message)
+' }
+' User ..|> ILogger
+
+' ' Опционально: использование (use, dashed line) -- это тоже зависимость
+' ' DataItem ..> Category  ' DataItem использует Category в методе
+
+@enduml
