@@ -1,25 +1,53 @@
 ﻿using LanguageCards.Entities;
-using LanguageCards.Interfaces;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 
-namespace MyRestApi.Data
+namespace MyRestApi
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : IdentityDbContext<User>
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options)
-            : base(options)
+        public AppDbContext(DbContextOptions<IdentityDbContext> options) 
+         : base(options)
         {
         }
-
-        public DbSet<User> Users => Set<User>();
-        
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        public DbSet<Theme> Themes { get; set; }
+        public DbSet<Card> Cards { get; set; }
+        protected override void OnModelCreating(ModelBuilder builder)
         {
-            modelBuilder.Entity<User>()
-                .HasKey(p => p.Id);
-                
+            base.OnModelCreating(builder);
+
+           
+            builder.Entity<User>().ToTable("Users");
+            builder.Entity<IdentityRole>().ToTable("Roles");
+            builder.Entity<IdentityUserRole<string>>().ToTable("UserRoles");
+            builder.Entity<IdentityUserClaim<string>>().ToTable("UserClaims");
+            builder.Entity<IdentityUserLogin<string>>().ToTable("UserLogins");
+            builder.Entity<IdentityRoleClaim<string>>().ToTable("RoleClaims");
+            builder.Entity<IdentityUserToken<string>>().ToTable("UserTokens");
+
+            builder.Entity<Theme>()
+                .HasIndex(c => new { c.OwnerId, c.Name })
+                .IsUnique();
+
+            builder.Entity<Theme>()
+                .HasOne(c => c.Owner)
+                .WithMany()
+                .HasForeignKey(o => o.OwnerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Card>()
+                .HasIndex(c => new { c.Word, c.ThemeId })
+                .IsUnique();
+
+            builder.Entity<Card>()
+                .HasOne(c => c.Theme)
+                .WithMany()
+                .HasForeignKey(c => c.ThemeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
         }
     }
 }
