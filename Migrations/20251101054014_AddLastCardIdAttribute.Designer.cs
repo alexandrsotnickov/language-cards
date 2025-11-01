@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using MyRestApi.Data;
+using MyRestApi;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LanguageCards.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251022055836_Init")]
-    partial class Init
+    [Migration("20251101054014_AddLastCardIdAttribute")]
+    partial class AddLastCardIdAttribute
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,83 @@ namespace LanguageCards.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("LanguageCards.Entities.Card", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<byte[]>("DescriptivePicture")
+                        .HasColumnType("bytea")
+                        .HasColumnName("descriptive_picture");
+
+                    b.Property<int>("ThemeId")
+                        .HasColumnType("integer")
+                        .HasColumnName("theme_id");
+
+                    b.Property<string>("Transcription")
+                        .HasColumnType("text")
+                        .HasColumnName("transcription");
+
+                    b.Property<string>("Translation")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("translation");
+
+                    b.Property<string>("Word")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("word");
+
+                    b.HasKey("Id")
+                        .HasName("pk_cards");
+
+                    b.HasIndex("ThemeId")
+                        .HasDatabaseName("ix_cards_theme_id");
+
+                    b.HasIndex("Word", "ThemeId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_cards_word_theme_id");
+
+                    b.ToTable("cards", (string)null);
+                });
+
+            modelBuilder.Entity("LanguageCards.Entities.Theme", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("LastCardId")
+                        .HasColumnType("integer")
+                        .HasColumnName("last_card_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("owner_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_themes");
+
+                    b.HasIndex("OwnerId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_themes_owner_id_name");
+
+                    b.ToTable("themes", (string)null);
+                });
 
             modelBuilder.Entity("LanguageCards.Entities.User", b =>
                 {
@@ -102,7 +179,30 @@ namespace LanguageCards.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("LanguageCards.Entities.UserCardStatus", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text")
+                        .HasColumnName("user_id");
+
+                    b.Property<int>("CardId")
+                        .HasColumnType("integer")
+                        .HasColumnName("card_id");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.HasKey("UserId", "CardId")
+                        .HasName("pk_user_cards_statuses");
+
+                    b.HasIndex("CardId")
+                        .HasDatabaseName("ix_user_cards_statuses_card_id");
+
+                    b.ToTable("user_cards_statuses", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -133,7 +233,7 @@ namespace LanguageCards.Migrations
                         .IsUnique()
                         .HasDatabaseName("RoleNameIndex");
 
-                    b.ToTable("Roles", (string)null);
+                    b.ToTable("roles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -164,7 +264,7 @@ namespace LanguageCards.Migrations
                     b.HasIndex("RoleId")
                         .HasDatabaseName("ix_role_claims_role_id");
 
-                    b.ToTable("RoleClaims", (string)null);
+                    b.ToTable("role_claims", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
@@ -195,7 +295,7 @@ namespace LanguageCards.Migrations
                     b.HasIndex("UserId")
                         .HasDatabaseName("ix_user_claims_user_id");
 
-                    b.ToTable("UserClaims", (string)null);
+                    b.ToTable("user_claims", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
@@ -223,7 +323,7 @@ namespace LanguageCards.Migrations
                     b.HasIndex("UserId")
                         .HasDatabaseName("ix_user_logins_user_id");
 
-                    b.ToTable("UserLogins", (string)null);
+                    b.ToTable("user_logins", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
@@ -242,7 +342,7 @@ namespace LanguageCards.Migrations
                     b.HasIndex("RoleId")
                         .HasDatabaseName("ix_user_roles_role_id");
 
-                    b.ToTable("UserRoles", (string)null);
+                    b.ToTable("user_roles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
@@ -266,7 +366,71 @@ namespace LanguageCards.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name")
                         .HasName("pk_user_tokens");
 
-                    b.ToTable("UserTokens", (string)null);
+                    b.ToTable("user_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("ThemeUser", b =>
+                {
+                    b.Property<int>("AddedThemesId")
+                        .HasColumnType("integer")
+                        .HasColumnName("added_themes_id");
+
+                    b.Property<string>("ThemeSubscribersId")
+                        .HasColumnType("text")
+                        .HasColumnName("theme_subscribers_id");
+
+                    b.HasKey("AddedThemesId", "ThemeSubscribersId")
+                        .HasName("pk_user_themes");
+
+                    b.HasIndex("ThemeSubscribersId")
+                        .HasDatabaseName("ix_user_themes_theme_subscribers_id");
+
+                    b.ToTable("UserThemes", (string)null);
+                });
+
+            modelBuilder.Entity("LanguageCards.Entities.Card", b =>
+                {
+                    b.HasOne("LanguageCards.Entities.Theme", "Theme")
+                        .WithMany()
+                        .HasForeignKey("ThemeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_cards_themes_theme_id");
+
+                    b.Navigation("Theme");
+                });
+
+            modelBuilder.Entity("LanguageCards.Entities.Theme", b =>
+                {
+                    b.HasOne("LanguageCards.Entities.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_themes_users_owner_id");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("LanguageCards.Entities.UserCardStatus", b =>
+                {
+                    b.HasOne("LanguageCards.Entities.Card", "Card")
+                        .WithMany()
+                        .HasForeignKey("CardId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_cards_statuses_cards_card_id");
+
+                    b.HasOne("LanguageCards.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_cards_statuses_users_user_id");
+
+                    b.Navigation("Card");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -324,6 +488,23 @@ namespace LanguageCards.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_user_tokens_users_user_id");
+                });
+
+            modelBuilder.Entity("ThemeUser", b =>
+                {
+                    b.HasOne("LanguageCards.Entities.Theme", null)
+                        .WithMany()
+                        .HasForeignKey("AddedThemesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_themes_themes_added_themes_id");
+
+                    b.HasOne("LanguageCards.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("ThemeSubscribersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_user_themes_users_theme_subscribers_id");
                 });
 #pragma warning restore 612, 618
         }

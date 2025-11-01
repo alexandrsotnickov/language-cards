@@ -2,7 +2,7 @@
 {
     public enum CardStatus
     {
-        Learned, 
-        NotStudied
+        NotStudied,
+        Learned
     }
 }

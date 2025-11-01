@@ -13,7 +13,7 @@ namespace LanguageCards.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Roles",
+                name: "roles",
                 columns: table => new
                 {
                     id = table.Column<string>(type: "text", nullable: false),
@@ -27,7 +27,7 @@ namespace LanguageCards.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Users",
+                name: "users",
                 columns: table => new
                 {
                     id = table.Column<string>(type: "text", nullable: false),
@@ -52,7 +52,7 @@ namespace LanguageCards.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "RoleClaims",
+                name: "role_claims",
                 columns: table => new
                 {
                     id = table.Column<int>(type: "integer", nullable: false)
@@ -67,13 +67,33 @@ namespace LanguageCards.Migrations
                     table.ForeignKey(
                         name: "fk_role_claims_roles_role_id",
                         column: x => x.role_id,
-                        principalTable: "Roles",
+                        principalTable: "roles",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserClaims",
+                name: "themes",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    name = table.Column<string>(type: "text", nullable: false),
+                    owner_id = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_themes", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_themes_users_owner_id",
+                        column: x => x.owner_id,
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "user_claims",
                 columns: table => new
                 {
                     id = table.Column<int>(type: "integer", nullable: false)
@@ -88,13 +108,13 @@ namespace LanguageCards.Migrations
                     table.ForeignKey(
                         name: "fk_user_claims_users_user_id",
                         column: x => x.user_id,
-                        principalTable: "Users",
+                        principalTable: "users",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserLogins",
+                name: "user_logins",
                 columns: table => new
                 {
                     login_provider = table.Column<string>(type: "text", nullable: false),
@@ -108,13 +128,13 @@ namespace LanguageCards.Migrations
                     table.ForeignKey(
                         name: "fk_user_logins_users_user_id",
                         column: x => x.user_id,
-                        principalTable: "Users",
+                        principalTable: "users",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserRoles",
+                name: "user_roles",
                 columns: table => new
                 {
                     user_id = table.Column<string>(type: "text", nullable: false),
@@ -126,19 +146,19 @@ namespace LanguageCards.Migrations
                     table.ForeignKey(
                         name: "fk_user_roles_roles_role_id",
                         column: x => x.role_id,
-                        principalTable: "Roles",
+                        principalTable: "roles",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "fk_user_roles_users_user_id",
                         column: x => x.user_id,
-                        principalTable: "Users",
+                        principalTable: "users",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserTokens",
+                name: "user_tokens",
                 columns: table => new
                 {
                     user_id = table.Column<string>(type: "text", nullable: false),
@@ -152,45 +172,85 @@ namespace LanguageCards.Migrations
                     table.ForeignKey(
                         name: "fk_user_tokens_users_user_id",
                         column: x => x.user_id,
-                        principalTable: "Users",
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "cards",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    word = table.Column<string>(type: "text", nullable: false),
+                    transcription = table.Column<string>(type: "text", nullable: true),
+                    translation = table.Column<string>(type: "text", nullable: false),
+                    descriptive_picture = table.Column<byte[]>(type: "bytea", nullable: true),
+                    theme_id = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_cards", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_cards_themes_theme_id",
+                        column: x => x.theme_id,
+                        principalTable: "themes",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
+                name: "ix_cards_theme_id",
+                table: "cards",
+                column: "theme_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_cards_word_theme_id",
+                table: "cards",
+                columns: new[] { "word", "theme_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "ix_role_claims_role_id",
-                table: "RoleClaims",
+                table: "role_claims",
                 column: "role_id");
 
             migrationBuilder.CreateIndex(
                 name: "RoleNameIndex",
-                table: "Roles",
+                table: "roles",
                 column: "normalized_name",
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "ix_themes_owner_id_name",
+                table: "themes",
+                columns: new[] { "owner_id", "name" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "ix_user_claims_user_id",
-                table: "UserClaims",
+                table: "user_claims",
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_user_logins_user_id",
-                table: "UserLogins",
+                table: "user_logins",
                 column: "user_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_user_roles_role_id",
-                table: "UserRoles",
+                table: "user_roles",
                 column: "role_id");
 
             migrationBuilder.CreateIndex(
                 name: "EmailIndex",
-                table: "Users",
+                table: "users",
                 column: "normalized_email");
 
             migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
-                table: "Users",
+                table: "users",
                 column: "normalized_user_name",
                 unique: true);
         }
@@ -199,25 +259,31 @@ namespace LanguageCards.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "RoleClaims");
+                name: "cards");
 
             migrationBuilder.DropTable(
-                name: "UserClaims");
+                name: "role_claims");
 
             migrationBuilder.DropTable(
-                name: "UserLogins");
+                name: "user_claims");
 
             migrationBuilder.DropTable(
-                name: "UserRoles");
+                name: "user_logins");
 
             migrationBuilder.DropTable(
-                name: "UserTokens");
+                name: "user_roles");
 
             migrationBuilder.DropTable(
-                name: "Roles");
+                name: "user_tokens");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "themes");
+
+            migrationBuilder.DropTable(
+                name: "roles");
+
+            migrationBuilder.DropTable(
+                name: "users");
         }
     }
 }

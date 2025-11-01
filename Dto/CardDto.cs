@@ -1,17 +1,16 @@
 ﻿using System.Net.Mime;
 
-namespace LanguageCards.Entities
+namespace LanguageCards.Dto
 {
-    public class Card
+    public class CardDto
     {
         public int Id { get; set; }
         public string Word { get ; set ; }
         public string? Transcription { get ; set; }
         public string Translation { get ; set ; }
         public byte[]? DescriptivePicture { get ; set ; }
-        public int ThemeId { get; set; }
-        public Theme Theme { get; set; }
 
+        public string ThemeName { get ; set ; }
        
     }
 }

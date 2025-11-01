@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-
+using MyRestApi;
 using NuGet.Packaging;
 using System;
 using System.Collections.Generic;
@@ -23,12 +23,13 @@ namespace LanguageCards.Controllers
 
     public class AuthController : ControllerBase
     {
-        
+        private readonly AppDbContext _context;
         private readonly IConfiguration _config;
         private readonly UserManager<User> _userManager;
 
-        public AuthController(UserManager<User> userManager, IConfiguration config)
+        public AuthController(UserManager<User> userManager, IConfiguration config, AppDbContext context)
         {
+            _context = context;
             _config = config;
             _userManager = userManager;
         }
@@ -53,18 +54,17 @@ namespace LanguageCards.Controllers
                 UserName = request.Username,
                 
             };
-
-            
-                new Theme 
-                { 
-                    Name = "Мои карточки", Owner = user, OwnerId = user.Id, ThemeCards = new List<Card>() 
-                } };
-
+           
             var result = await _userManager.CreateAsync(user, request.Password);
 
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
+            user = await _userManager.FindByNameAsync(user.UserName);
+
+            var theme = new Theme { Name = "Мои карточки", Owner = user, OwnerId = user.Id, OwnerName = user.UserName};
+            _context.Themes.Add(theme);
+            _context.SaveChanges();
             return Ok("Регистрация успешна.");
         }
 

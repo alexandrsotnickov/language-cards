@@ -7,7 +7,7 @@ namespace LanguageCards.Entities
 {
     public class User : IdentityUser 
     {
-
+        public ICollection<Theme> AddedThemes { get; set; } = new List<Theme>();
     }
 
 }
