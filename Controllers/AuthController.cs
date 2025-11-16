@@ -1,4 +1,6 @@
-﻿using LanguageCards.Entities;
+﻿using LanguageCards.Api.Dto;
+using LanguageCards.Api.Services;
+using LanguageCards.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -19,27 +21,30 @@ namespace LanguageCards.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-   
+
 
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;
         private readonly UserManager<User> _userManager;
+        private readonly ITokenService _tokenService;
+        private readonly SignInManager<User> _signInManager;
 
-        public AuthController(UserManager<User> userManager, IConfiguration config, AppDbContext context)
+        public AuthController(UserManager<User> userManager,
+            IConfiguration config,
+            AppDbContext context,
+            SignInManager<User> signInManager,
+            ITokenService tokenService
+            )
         {
+            _tokenService = tokenService;
+            _signInManager = signInManager;
             _context = context;
             _config = config;
             _userManager = userManager;
         }
 
-
-        //[HttpGet]
-        //public async Task<IActionResult> GetAll ()
-        //{
-        //    return Ok(await _context.Users.ToListAsync());
-        //}
 
         [AllowAnonymous]
         [HttpPost("register")]
@@ -47,65 +52,129 @@ namespace LanguageCards.Controllers
         {
             var existingUser = await _userManager.FindByNameAsync(request.Username);
             if (existingUser != null)
-                return BadRequest("Пользователь уже существует.");
+                return BadRequest(new ApiResponseDto<object> { Success = false, ValidationError = "Такой пользователь уже существует" });
 
             var user = new User
             {
                 UserName = request.Username,
-                
+
             };
-           
+
             var result = await _userManager.CreateAsync(user, request.Password);
 
+            var validationError = result.Errors.FirstOrDefault()?.Description;
+
+
             if (!result.Succeeded)
-                return BadRequest(result.Errors);
+                return BadRequest(new ApiResponseDto<object> { Success = false, ValidationError = validationError });
 
             user = await _userManager.FindByNameAsync(user.UserName);
 
-            var theme = new Theme { Name = "Мои карточки", Owner = user, OwnerId = user.Id, OwnerName = user.UserName};
+            var theme = new Theme { Name = "Мои карточки", Owner = user, OwnerId = user.Id, OwnerName = user.UserName };
             _context.Themes.Add(theme);
             _context.SaveChanges();
-            return Ok("Регистрация успешна.");
+            return Ok(new ApiResponseDto<object> { Success = true, Message = "Вы успешно зарегистрировались" });
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var user = await _userManager.FindByNameAsync(request.Username);
-            if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
-                return Unauthorized("Неверный логин или пароль.");
+            if (user == null) return Unauthorized();
 
-            var token = await GenerateJwtToken(user);
-            return Ok(new { token });
+            var check = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
+            if (!check.Succeeded) return Unauthorized();
+
+
+            var claims = new[]
+            {
+            new Claim(ClaimTypes.NameIdentifier, user.Id),
+            new Claim(ClaimTypes.Name, user.UserName)
+        };
+            var accessToken = _tokenService.GenerateAccessToken(claims);
+
+
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var refreshToken = _tokenService.CreateRefreshToken(ip);
+            refreshToken.UserId = user.Id;
+
+
+            _context.RefreshTokens.Add(refreshToken);
+            await _context.SaveChangesAsync();
+
+
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = refreshToken.Expires,
+                Path = "/"
+            };
+            Response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);
+
+            return Ok(new { accessToken });
         }
 
-        private async Task<string> GenerateJwtToken(User user)
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh()
         {
-            var userRoles = await _userManager.GetRolesAsync(user);
-            var jwtSettings = _config.GetSection("Jwt");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            
+            if (!Request.Cookies.TryGetValue("refreshToken", out var token)) return Unauthorized();
 
-            var claims = new List<Claim>
+            var rt = await _context.RefreshTokens.Include(r => r.User).FirstOrDefaultAsync(r => r.Token == token);
+            if (rt == null || rt.IsRevoked || rt.Expires <= DateTime.UtcNow) return Unauthorized();
+
+           
+            rt.IsRevoked = true;
+
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var newRt = _tokenService.CreateRefreshToken(ip);
+            newRt.UserId = rt.UserId;
+            _context.RefreshTokens.Add(newRt);
+
+           
+            var claims = new[]
             {
-            new Claim(ClaimTypes.Name, user.UserName!),
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
+            new Claim(ClaimTypes.NameIdentifier, rt.User.Id),
+            new Claim(ClaimTypes.Name, rt.User.UserName)
         };
-            claims.AddRange(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
+            var newAccessToken = _tokenService.GenerateAccessToken(claims);
+            await _context.SaveChangesAsync();
 
-            var token = new JwtSecurityToken(
-                issuer: jwtSettings["Issuer"],
-                audience: jwtSettings["Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(double.Parse(jwtSettings["ExpireMinutes"] ?? "60")),
-                signingCredentials: creds
-            );
+            // set new cookie
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = newRt.Expires,
+                Path = "/"
+            };
+            Response.Cookies.Append("refreshToken", newRt.Token, cookieOptions);
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return Ok(new { accessToken = newAccessToken });
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            // remove cookie and revoke token in DB if present
+            if (Request.Cookies.TryGetValue("refreshToken", out var token))
+            {
+                var rt = await _context.RefreshTokens.FirstOrDefaultAsync(r => r.Token == token);
+                if (rt != null)
+                {
+                    rt.IsRevoked = true;
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            Response.Cookies.Delete("refreshToken", new CookieOptions { HttpOnly = true, Secure = true, SameSite = SameSiteMode.Strict, Path = "/" });
+            return Ok(new { message = "Logged out" });
         }
     }
-
-    public record RegisterRequest(string Username, string Password);
+        public record RegisterRequest(string Username, string Password);
     public record LoginRequest(string Username, string Password);
 }
 

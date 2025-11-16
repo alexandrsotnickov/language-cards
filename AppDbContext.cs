@@ -1,4 +1,5 @@
-﻿using LanguageCards.Dto;
+﻿using LanguageCards.Api.Entities;
+using LanguageCards.Dto;
 using LanguageCards.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -17,6 +18,8 @@ namespace MyRestApi
         public DbSet<Theme> Themes { get; set; }
         public DbSet<Card> Cards { get; set; }
         public DbSet<UserCardStatus> UserCardsStatuses { get; set; }
+
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

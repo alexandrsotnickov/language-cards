@@ -1,4 +1,5 @@
 using LanguageCards;
+using LanguageCards.Api.Services;
 using LanguageCards.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -18,8 +19,20 @@ builder.Services.AddIdentity<User, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
+builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddControllers();
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowLocalhost",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:3000") 
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
 
 
 
@@ -36,7 +49,10 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
+
 {
+    options.RequireHttpsMetadata = true;
+    options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -52,8 +68,8 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
-app.UseAuthentication();
-app.UseAuthorization();
+
+
 
 using (var scope = app.Services.CreateScope())
 {
@@ -83,10 +99,11 @@ using (var scope = app.Services.CreateScope())
 
 
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
+app.UseCors("AllowLocalhost");
+app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
