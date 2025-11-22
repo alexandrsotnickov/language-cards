@@ -71,6 +71,15 @@ namespace LanguageCards.Controllers
         }
 
 
+        [HttpGet]
+        public IActionResult GeAllThemes()
+        {
+            var themes = _context.Themes
+                .ToList();
+
+            return Ok(themes);
+        }
+
         [HttpGet("{themeId}/cards")]
         public IActionResult GetCardsByTheme(int themeId)
         {
@@ -100,5 +109,7 @@ namespace LanguageCards.Controllers
             }
                 return BadRequest("Текущий пользователь не является владельцем темы");
         }
+
+
     }
 }

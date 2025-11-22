@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Tokens.Experimental;
 using MyRestApi;
 using NuGet.Packaging;
 using System;
@@ -80,10 +81,17 @@ namespace LanguageCards.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var user = await _userManager.FindByNameAsync(request.Username);
-            if (user == null) return Unauthorized();
+            if (user == null) return Unauthorized(new ApiResponseDto<object> { 
+                Success = false,
+                ValidationError = "Пользователь не найден" 
+            });
 
             var check = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
-            if (!check.Succeeded) return Unauthorized();
+            if (!check.Succeeded) return Unauthorized(new ApiResponseDto<object>
+            {
+                Success = false,
+                ValidationError = "Неверный пароль"
+            } );
 
 
             var claims = new[]
@@ -113,19 +121,19 @@ namespace LanguageCards.Controllers
             };
             Response.Cookies.Append("refreshToken", refreshToken.Token, cookieOptions);
 
-            return Ok(new { accessToken });
+            return Ok(new { AccessToken = accessToken, UserName = user.UserName });
         }
 
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh()
         {
-            
+            // get refresh token from HttpOnly cookie
             if (!Request.Cookies.TryGetValue("refreshToken", out var token)) return Unauthorized();
 
             var rt = await _context.RefreshTokens.Include(r => r.User).FirstOrDefaultAsync(r => r.Token == token);
             if (rt == null || rt.IsRevoked || rt.Expires <= DateTime.UtcNow) return Unauthorized();
 
-           
+            // optionally rotate token: revoke old, create new
             rt.IsRevoked = true;
 
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -133,7 +141,7 @@ namespace LanguageCards.Controllers
             newRt.UserId = rt.UserId;
             _context.RefreshTokens.Add(newRt);
 
-           
+            // create new access token
             var claims = new[]
             {
             new Claim(ClaimTypes.NameIdentifier, rt.User.Id),
@@ -159,7 +167,6 @@ namespace LanguageCards.Controllers
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
-            // remove cookie and revoke token in DB if present
             if (Request.Cookies.TryGetValue("refreshToken", out var token))
             {
                 var rt = await _context.RefreshTokens.FirstOrDefaultAsync(r => r.Token == token);
