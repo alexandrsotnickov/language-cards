@@ -1,10 +1,12 @@
-﻿using LanguageCards.Dto;
+﻿using LanguageCards.Api.Dto;
+using LanguageCards.Dto;
 using LanguageCards.Entities;
 using LanguageCards.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens.Experimental;
 using MyRestApi;
 
 namespace LanguageCards.Controllers
@@ -24,32 +26,79 @@ namespace LanguageCards.Controllers
         }
 
         [HttpPost("create")]
-        public IActionResult Create([FromBody] ThemeDto themeDto)
+        public async Task<IActionResult> Create([FromBody] ThemeDto themeDto)
         {
             try
             {
-                var user = _context.Users.FirstOrDefault(u => u.UserName == User.Identity.Name);
+                if (themeDto.Name == string.Empty || themeDto.Name == null)
+                {
+                    return BadRequest(
+                        new ApiResponseDto<object>
+                        {
+                            Success = false,
+                            ValidationError = $"Ошибка: введите название создаваемой темы"
+                        });
+                }
+                    var user = _context.Users.FirstOrDefault(u => u.UserName == User.Identity.Name);
 
-                var theme = new Theme { Name = themeDto.Name, Owner = user, OwnerId = user.Id, OwnerName = user.UserName, ThemeSubscribers = { user } };
+                var theme = new Theme 
+                { 
+                    Name = themeDto.Name,
+                    Owner = user,
+                    OwnerId = user.Id,
+                    OwnerName = user.UserName,
+                    ThemeSubscribers = { user }
+                };
+                
                 _context.Themes.Add(theme);
             
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
+                CreatedAtAction(nameof(GetThemeById), new { id = theme.Id }, theme);
+
+                return Ok(
+               new ApiResponseDto<object>
+               {
+                   Success = true,
+                   Message = "Создание темы прошло успешно.",
+                   Data = new ThemeDto { Id = theme.Id, Name = theme.Name, OwnerName = theme.OwnerName },
+               });
+
+
             }
             catch (DbUpdateException ex) when (ex.InnerException is Npgsql.PostgresException pgEx)
             {
                 if(pgEx.Message.Contains("ограничение уникальности"))
                 {
-                    return BadRequest($"Ошибка создания темы: коллекция с таким именем уже существует");
+                    return BadRequest(
+                        new ApiResponseDto<object>
+                        { 
+                            Success = false,
+                            ValidationError = $"Ошибка создания темы: коллекция с таким именем уже существует"
+                        });
                 }
                 else
                 {
-                    return BadRequest($"Ошибка создания темы: {pgEx.MessageText}");
+                    return BadRequest(
+                        new ApiResponseDto<object> 
+                        { 
+                            Success = false,
+                            ValidationError = $"Ошибка создания темы: {pgEx.MessageText}" 
+                        });
                 }
             }
 
-            return Ok("Создание темы прошло успешно.");
+           
         }
 
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Theme>> GetThemeById(int id)
+        {
+            var theme = await _context.Themes.FindAsync(id);
+            if (theme == null)
+                return NotFound();
+
+            return theme;
+        }
 
         [HttpGet("{themeId}/random-card")]
         public IActionResult GetRandomCard(int themeId)

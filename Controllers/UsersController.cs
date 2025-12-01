@@ -78,7 +78,8 @@ namespace LanguageCards.Controllers
             foreach (var item in _context.Users
                 .Include(u => u.AddedThemes)
                 .ThenInclude(t => t.Owner)
-                .FirstOrDefault(u => u.UserName == User.Identity.Name).AddedThemes)
+                .FirstOrDefault(u => u.UserName == User.Identity.Name)
+                .AddedThemes.OrderBy(x => x.OwnerName))
             {
                 themesIdList.Add(new ThemeDto { Id = item.Id, Name = item.Name, OwnerName = item.Owner.UserName});
             }
