@@ -18,7 +18,7 @@ namespace LanguageCards.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;
-        
+
         public ThemesController(AppDbContext context, IConfiguration config)
         {
             _config = config;
@@ -39,19 +39,19 @@ namespace LanguageCards.Controllers
                             ValidationError = $"Ошибка: введите название создаваемой темы"
                         });
                 }
-                    var user = _context.Users.FirstOrDefault(u => u.UserName == User.Identity.Name);
+                var user = _context.Users.FirstOrDefault(u => u.UserName == User.Identity.Name);
 
-                var theme = new Theme 
-                { 
+                var theme = new Theme
+                {
                     Name = themeDto.Name,
                     Owner = user,
                     OwnerId = user.Id,
                     OwnerName = user.UserName,
                     ThemeSubscribers = { user }
                 };
-                
+
                 _context.Themes.Add(theme);
-            
+
                 await _context.SaveChangesAsync();
                 CreatedAtAction(nameof(GetThemeById), new { id = theme.Id }, theme);
 
@@ -67,11 +67,11 @@ namespace LanguageCards.Controllers
             }
             catch (DbUpdateException ex) when (ex.InnerException is Npgsql.PostgresException pgEx)
             {
-                if(pgEx.Message.Contains("ограничение уникальности"))
+                if (pgEx.Message.Contains("ограничение уникальности"))
                 {
                     return BadRequest(
                         new ApiResponseDto<object>
-                        { 
+                        {
                             Success = false,
                             ValidationError = $"Ошибка создания темы: коллекция с таким именем уже существует"
                         });
@@ -79,15 +79,15 @@ namespace LanguageCards.Controllers
                 else
                 {
                     return BadRequest(
-                        new ApiResponseDto<object> 
-                        { 
+                        new ApiResponseDto<object>
+                        {
                             Success = false,
-                            ValidationError = $"Ошибка создания темы: {pgEx.MessageText}" 
+                            ValidationError = $"Ошибка создания темы: {pgEx.MessageText}"
                         });
                 }
             }
 
-           
+
         }
 
         [HttpGet("{id}")]
@@ -95,7 +95,11 @@ namespace LanguageCards.Controllers
         {
             var theme = await _context.Themes.FindAsync(id);
             if (theme == null)
-                return NotFound();
+                return NotFound(new ApiResponseDto<object>
+                {
+                    Success = false,
+                    ValidationError = $"Ошибка: такой темы не существует"
+                });
 
             return theme;
         }
@@ -129,16 +133,6 @@ namespace LanguageCards.Controllers
             return Ok(themes);
         }
 
-        [HttpGet("{themeId}/cards")]
-        public IActionResult GetCardsByTheme(int themeId)
-        {
-            var cards = _context.Cards
-                .Where(c => c.ThemeId == themeId)
-                .ToList();
-
-            return Ok(cards);
-        }
-
 
         [HttpDelete("{themeId}")]
         public IActionResult DeleteTheme(int themeId)
@@ -152,13 +146,22 @@ namespace LanguageCards.Controllers
                 _context.SaveChanges();
                 return Ok("Тема и её содержимое были успешно удалены");
             }
-            else if(theme == null)
+            else if (theme == null)
             {
                 return BadRequest("Данной темы не существует");
             }
-                return BadRequest("Текущий пользователь не является владельцем темы");
+            return BadRequest("Текущий пользователь не является владельцем темы");
         }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateTheme(int id, [FromBody] ThemeDto dto)
+        {
+            var theme = await _context.Themes.FirstOrDefaultAsync(t => t.Id == id);
 
+            theme.Name = dto.Name;
 
+            await _context.SaveChangesAsync();
+
+            return Ok(theme);
+        }
     }
 }
