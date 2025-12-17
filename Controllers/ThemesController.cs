@@ -161,7 +161,12 @@ namespace LanguageCards.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok(theme);
+            return Ok(new ApiResponseDto<object>
+            {
+                Success = true,
+                Message = "Обновление названия темы прошло успешно.",
+                Data = new ThemeDto { Id = theme.Id, Name = theme.Name, OwnerName = theme.OwnerName },
+            });
         }
     }
 }

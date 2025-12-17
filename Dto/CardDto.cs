@@ -10,7 +10,7 @@ namespace LanguageCards.Dto
         public string Translation { get ; set ; }
         public byte[]? DescriptivePicture { get ; set ; }
 
-        public string ThemeName { get ; set ; }
+        public int ThemeId { get ; set ; }
        
     }
 }

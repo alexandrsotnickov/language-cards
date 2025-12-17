@@ -29,10 +29,8 @@ namespace LanguageCards.Controllers
         {
             try
             {
-                
                 var theme = _context.Themes.FirstOrDefault(
-                    t => t.Name == cardDto.ThemeName
-                    && t.Owner.UserName == User.Identity.Name);
+                    t => t.Id == cardDto.ThemeId);
                 var card = new Card
                 {
                     Theme = theme,
