@@ -4,19 +4,9 @@ using LanguageCards.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.IdentityModel.Tokens.Experimental;
 using MyRestApi;
-using NuGet.Packaging;
-using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LanguageCards.Controllers
 {
@@ -81,9 +71,10 @@ namespace LanguageCards.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var user = await _userManager.FindByNameAsync(request.Username);
-            if (user == null) return Unauthorized(new ApiResponseDto<object> { 
+            if (user == null) return Unauthorized(new ApiResponseDto<object>
+            {
                 Success = false,
-                ValidationError = "Пользователь не найден" 
+                ValidationError = "Пользователь не найден"
             });
 
             var check = await _signInManager.CheckPasswordSignInAsync(user, request.Password, false);
@@ -91,7 +82,7 @@ namespace LanguageCards.Controllers
             {
                 Success = false,
                 ValidationError = "Неверный пароль"
-            } );
+            });
 
 
             var claims = new[]
@@ -181,7 +172,7 @@ namespace LanguageCards.Controllers
             return Ok(new { message = "Logged out" });
         }
     }
-        public record RegisterRequest(string Username, string Password);
+    public record RegisterRequest(string Username, string Password);
     public record LoginRequest(string Username, string Password);
 }
 

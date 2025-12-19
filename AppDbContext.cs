@@ -1,17 +1,15 @@
 ﻿using LanguageCards.Api.Entities;
-using LanguageCards.Dto;
 using LanguageCards.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.Emit;
 
 
 namespace MyRestApi
 {
     public class AppDbContext : IdentityDbContext<User>
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) 
+        public AppDbContext(DbContextOptions<AppDbContext> options)
          : base(options)
         {
         }
@@ -23,7 +21,7 @@ namespace MyRestApi
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-            
+
 
             builder.Entity<User>().ToTable("users");
             builder.Entity<IdentityRole>().ToTable("roles");

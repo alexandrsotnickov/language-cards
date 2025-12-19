@@ -1,4 +1,3 @@
-using LanguageCards;
 using LanguageCards.Api.Services;
 using LanguageCards.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -28,7 +27,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowLocalhost",
         policy =>
         {
-            policy.WithOrigins("http://localhost:3000") 
+            policy.WithOrigins("http://localhost:3000")
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });

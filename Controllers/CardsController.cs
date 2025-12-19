@@ -1,10 +1,7 @@
-﻿using Humanizer;
+﻿using LanguageCards.Api.Dto;
 using LanguageCards.Dto;
 using LanguageCards.Entities;
-using LanguageCards.Enums;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyRestApi;
@@ -18,19 +15,19 @@ namespace LanguageCards.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;
-        public CardsController(AppDbContext context, IConfiguration config) 
-        { 
+
+        public CardsController(AppDbContext context, IConfiguration config)
+        {
             _config = config;
             _context = context;
         }
 
         [HttpPost("create")]
-        public IActionResult Create([FromBody] CardDto cardDto)
+        public async Task<IActionResult> Create([FromBody] CardDto cardDto)
         {
             try
             {
-                var theme = _context.Themes.FirstOrDefault(
-                    t => t.Id == cardDto.ThemeId);
+                var theme = _context.Themes.FirstOrDefault(t => t.Id == cardDto.ThemeId);
                 var card = new Card
                 {
                     Theme = theme,
@@ -39,26 +36,39 @@ namespace LanguageCards.Controllers
                     Word = cardDto.Word,
                     Translation = cardDto.Translation,
                     Transcription = cardDto.Transcription,
-
                 };
                 _context.Cards.Add(card);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
+
+                return Ok(
+                    new ApiResponseDto<object>
+                    {
+                        Data = new CardDto
+                        {
+                            Id = card.Id,
+                            Word = card.Word,
+                            ThemeId = card.Id,
+                            Transcription = card.Transcription,
+                            Translation = card.Translation,
+                        },
+
+                    }
+                );
             }
             catch (DbUpdateException ex) when (ex.InnerException is Npgsql.PostgresException pgEx)
             {
                 if (pgEx.Message.Contains("ограничение уникальности"))
                 {
-                    return BadRequest($"Ошибка создания карточки: карточка с таким словом уже существует");
+                    return BadRequest(
+                        $"Ошибка создания карточки: карточка с таким словом уже существует"
+                    );
                 }
                 else
                 {
                     return BadRequest($"Ошибка создания карточки: {pgEx.MessageText}");
                 }
             }
-
-            return Ok("Создание языковой карточки прошло успешно.");
         }
-
 
         [HttpDelete("{id}")]
         public IActionResult DeleteCard(int id)
@@ -70,8 +80,7 @@ namespace LanguageCards.Controllers
             _context.Cards.Remove(card);
             _context.SaveChanges();
 
-            return Ok("Карта была успешно удалена"); 
+            return Ok("Карта была успешно удалена");
         }
-
     }
 }

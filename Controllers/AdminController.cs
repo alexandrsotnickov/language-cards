@@ -1,7 +1,4 @@
-﻿using LanguageCards.Entities;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace LanguageCards.Controllers
 {
@@ -14,9 +11,9 @@ namespace LanguageCards.Controllers
         public AdminController(IConfiguration config)
         {
             _config = config;
-            
+
         }
-  
+
 
         //[HttpGet("????")]
         //[Authorize(Roles = "Admin")]

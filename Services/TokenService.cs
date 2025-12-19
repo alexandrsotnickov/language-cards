@@ -1,5 +1,4 @@
 ﻿using LanguageCards.Api.Entities;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -10,7 +9,7 @@ namespace LanguageCards.Api.Services
 {
     public class TokenService : ITokenService
     {
-        
+
         private readonly IConfiguration _config;
         public TokenService(IConfiguration config)
         {

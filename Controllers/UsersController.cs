@@ -1,8 +1,6 @@
 ﻿using LanguageCards.Dto;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using MyRestApi;
 
@@ -34,8 +32,8 @@ namespace LanguageCards.Controllers
             {
                 return BadRequest("Вы являетесь создателем темы");
             }
-            
-            if(theme.ThemeSubscribers
+
+            if (theme.ThemeSubscribers
                     .Any(ts => ts.UserName == currentUser.UserName))
             {
                 return BadRequest("Вы уже подписались на эту тему");
@@ -57,21 +55,22 @@ namespace LanguageCards.Controllers
                  .FirstOrDefault(t => t.Id == themeDto.Id);
             var currentUser = _context.Users.FirstOrDefault(u => u.UserName == User.Identity.Name);
 
-            if (theme.ThemeSubscribers.Any(ts => ts.UserName == currentUser.UserName)){
+            if (theme.ThemeSubscribers.Any(ts => ts.UserName == currentUser.UserName))
+            {
                 theme.ThemeSubscribers.Remove(currentUser);
                 _context.SaveChanges();
                 return Ok();
             }
-            else 
+            else
             {
                 return NotFound();
             }
-            
-           
+
+
         }
 
         [HttpGet("themes")]
-        
+
         public IActionResult GetSubscribedThemes()
         {
             List<ThemeDto> themesIdList = new List<ThemeDto>();
@@ -81,9 +80,9 @@ namespace LanguageCards.Controllers
                 .FirstOrDefault(u => u.UserName == User.Identity.Name)
                 .AddedThemes.OrderBy(x => x.OwnerName))
             {
-                themesIdList.Add(new ThemeDto { Id = item.Id, Name = item.Name, OwnerName = item.Owner.UserName});
+                themesIdList.Add(new ThemeDto { Id = item.Id, Name = item.Name, OwnerName = item.Owner.UserName });
             }
-            
+
             return Ok(themesIdList);
         }
     }

@@ -3,10 +3,8 @@ using LanguageCards.Dto;
 using LanguageCards.Entities;
 using LanguageCards.Enums;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens.Experimental;
 using MyRestApi;
 
 namespace LanguageCards.Controllers
@@ -36,8 +34,9 @@ namespace LanguageCards.Controllers
                         new ApiResponseDto<object>
                         {
                             Success = false,
-                            ValidationError = $"Ошибка: введите название создаваемой темы"
-                        });
+                            ValidationError = $"Ошибка: введите название создаваемой темы",
+                        }
+                    );
                 }
                 var user = _context.Users.FirstOrDefault(u => u.UserName == User.Identity.Name);
 
@@ -47,7 +46,7 @@ namespace LanguageCards.Controllers
                     Owner = user,
                     OwnerId = user.Id,
                     OwnerName = user.UserName,
-                    ThemeSubscribers = { user }
+                    ThemeSubscribers = { user },
                 };
 
                 _context.Themes.Add(theme);
@@ -56,14 +55,18 @@ namespace LanguageCards.Controllers
                 CreatedAtAction(nameof(GetThemeById), new { id = theme.Id }, theme);
 
                 return Ok(
-               new ApiResponseDto<object>
-               {
-                   Success = true,
-                   Message = "Создание темы прошло успешно.",
-                   Data = new ThemeDto { Id = theme.Id, Name = theme.Name, OwnerName = theme.OwnerName },
-               });
-
-
+                    new ApiResponseDto<object>
+                    {
+                        Success = true,
+                        Message = "Создание темы прошло успешно.",
+                        Data = new ThemeDto
+                        {
+                            Id = theme.Id,
+                            Name = theme.Name,
+                            OwnerName = theme.OwnerName,
+                        },
+                    }
+                );
             }
             catch (DbUpdateException ex) when (ex.InnerException is Npgsql.PostgresException pgEx)
             {
@@ -73,8 +76,10 @@ namespace LanguageCards.Controllers
                         new ApiResponseDto<object>
                         {
                             Success = false,
-                            ValidationError = $"Ошибка создания темы: коллекция с таким именем уже существует"
-                        });
+                            ValidationError =
+                                $"Ошибка создания темы: коллекция с таким именем уже существует",
+                        }
+                    );
                 }
                 else
                 {
@@ -82,12 +87,11 @@ namespace LanguageCards.Controllers
                         new ApiResponseDto<object>
                         {
                             Success = false,
-                            ValidationError = $"Ошибка создания темы: {pgEx.MessageText}"
-                        });
+                            ValidationError = $"Ошибка создания темы: {pgEx.MessageText}",
+                        }
+                    );
                 }
             }
-
-
         }
 
         [HttpGet("{id}")]
@@ -95,11 +99,13 @@ namespace LanguageCards.Controllers
         {
             var theme = await _context.Themes.FindAsync(id);
             if (theme == null)
-                return NotFound(new ApiResponseDto<object>
-                {
-                    Success = false,
-                    ValidationError = $"Ошибка: такой темы не существует"
-                });
+                return NotFound(
+                    new ApiResponseDto<object>
+                    {
+                        Success = false,
+                        ValidationError = $"Ошибка: такой темы не существует",
+                    }
+                );
 
             return theme;
         }
@@ -107,15 +113,20 @@ namespace LanguageCards.Controllers
         [HttpGet("{themeId}/random-card")]
         public IActionResult GetRandomCard(int themeId)
         {
-
-            var card = _context.Cards
-                .Include(c => c.Theme)
-                .Where(card => card.Theme.LastCardId != card.Id &&
-                        (!_context.UserCardsStatuses.Any(u => u.CardId == card.Id)
-                        || _context.UserCardsStatuses.Any(u => u.CardId == card.Id
-                        && u.Status == CardStatus.NotStudied))
-                       && card.ThemeId == themeId)
-                .OrderBy(card => EF.Functions.Random()).FirstOrDefault();
+            var card = _context
+                .Cards.Include(c => c.Theme)
+                .Where(card =>
+                    card.Theme.LastCardId != card.Id
+                    && (
+                        !_context.UserCardsStatuses.Any(u => u.CardId == card.Id)
+                        || _context.UserCardsStatuses.Any(u =>
+                            u.CardId == card.Id && u.Status == CardStatus.NotStudied
+                        )
+                    )
+                    && card.ThemeId == themeId
+                )
+                .OrderBy(card => EF.Functions.Random())
+                .FirstOrDefault();
 
             card.Theme.LastCardId = card.Id;
             _context.SaveChanges();
@@ -123,24 +134,23 @@ namespace LanguageCards.Controllers
             return Ok(card);
         }
 
-
         [HttpGet]
         public IActionResult GeAllThemes()
         {
-            var themes = _context.Themes
-                .ToList();
+            var themes = _context.Themes.ToList();
 
             return Ok(themes);
         }
-
 
         [HttpDelete("{themeId}")]
         public IActionResult DeleteTheme(int themeId)
         {
             var theme = _context.Themes.Find(themeId);
-            if (theme != null
-                && theme.OwnerId == _context.Users.FirstOrDefault
-                    (u => u.UserName == User.Identity.Name).Id)
+            if (
+                theme != null
+                && theme.OwnerId
+                    == _context.Users.FirstOrDefault(u => u.UserName == User.Identity.Name).Id
+            )
             {
                 _context.Themes.Remove(theme);
                 _context.SaveChanges();
@@ -152,6 +162,7 @@ namespace LanguageCards.Controllers
             }
             return BadRequest("Текущий пользователь не является владельцем темы");
         }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTheme(int id, [FromBody] ThemeDto dto)
         {
@@ -161,12 +172,26 @@ namespace LanguageCards.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok(new ApiResponseDto<object>
-            {
-                Success = true,
-                Message = "Обновление названия темы прошло успешно.",
-                Data = new ThemeDto { Id = theme.Id, Name = theme.Name, OwnerName = theme.OwnerName },
-            });
+            return Ok(
+                new ApiResponseDto<object>
+                {
+                    Success = true,
+                    Message = "Обновление названия темы прошло успешно.",
+                    Data = new ThemeDto
+                    {
+                        Id = theme.Id,
+                        Name = theme.Name,
+                        OwnerName = theme.OwnerName,
+                    },
+                }
+            );
+        }
+
+        [HttpGet("{id}/cards")]
+        public async Task<IActionResult> GetThemeCards(int id)
+        {
+            var themeCards = _context.Cards.Where(card => id == card.ThemeId);
+            return Ok(themeCards);
         }
     }
 }
