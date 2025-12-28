@@ -5,6 +5,7 @@ using LanguageCards.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using MyRestApi;
 
 namespace LanguageCards.Controllers
@@ -128,10 +129,20 @@ namespace LanguageCards.Controllers
                 .OrderBy(card => EF.Functions.Random())
                 .FirstOrDefault();
 
+            if (card == null)
+            {
+                return NotFound(
+                    new ApiResponseDto<object>
+                    {
+                        Success = false,
+                        Message = $"В данной теме больше нет неизученных карточек",
+                    }
+                );
+            }
             card.Theme.LastCardId = card.Id;
             _context.SaveChanges();
 
-            return Ok(card);
+            return Ok(new ApiResponseDto<object> { Data = card, Success = true });
         }
 
         [HttpGet]
@@ -190,8 +201,37 @@ namespace LanguageCards.Controllers
         [HttpGet("{id}/cards")]
         public async Task<IActionResult> GetThemeCards(int id)
         {
-            var themeCards = _context.Cards.Where(card => id == card.ThemeId);
-            return Ok(themeCards);
+            return Ok(GetCardsFromTheme(id));
+        }
+
+        private IQueryable<Card> GetCardsFromTheme(int id)
+        {
+            return _context.Cards.Where(card => id == card.ThemeId);
+        }
+
+        [HttpPost("{themeId}/reset-card-statuses")]
+        public async Task<IActionResult> ResetThemeCardStatuses(int themeId)
+        {
+            try
+            {
+                var userId = _context
+                    .Users.FirstOrDefault(u => u.UserName == User.Identity.Name)
+                    .Id;
+                var query = _context.UserCardsStatuses.Where(ucs =>
+                    ucs.UserId == userId && ucs.Card.ThemeId == themeId
+                );
+
+                await query.ExecuteUpdateAsync(ucs =>
+                    ucs.SetProperty(ucs => ucs.Status, CardStatus.NotStudied)
+                );
+                return Ok(new ApiResponseDto<object> { Success = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(
+                    new ApiResponseDto<object> { Success = false, ValidationError = ex.Message }
+                );
+            }
         }
     }
 }
