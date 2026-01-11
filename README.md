@@ -38,8 +38,8 @@ dotnet run
 ```
 По умолчанию API доступен по адресу:
 
-https://localhost:7192
-http://localhost:5192
+- https://localhost:7192
+- http://localhost:5192
 
 
 
