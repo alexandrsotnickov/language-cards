@@ -1,4 +1,5 @@
-﻿using LanguageCards.Dto;
+﻿using LanguageCards.Api.Dto;
+using LanguageCards.Dto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -59,7 +60,7 @@ namespace LanguageCards.Controllers
             {
                 theme.ThemeSubscribers.Remove(currentUser);
                 _context.SaveChanges();
-                return Ok();
+                return Ok(new ApiResponseDto<object> { Status = 200 });
             }
             else
             {
@@ -69,21 +70,36 @@ namespace LanguageCards.Controllers
 
         }
 
+
         [HttpGet("themes")]
-
-        public IActionResult GetSubscribedThemes()
+        public async Task<IActionResult> GetSubscribedThemes()
         {
-            List<ThemeDto> themesIdList = new List<ThemeDto>();
-            foreach (var item in _context.Users
-                .Include(u => u.AddedThemes)
-                .ThenInclude(t => t.Owner)
-                .FirstOrDefault(u => u.UserName == User.Identity.Name)
-                .AddedThemes.OrderBy(x => x.OwnerName))
-            {
-                themesIdList.Add(new ThemeDto { Id = item.Id, Name = item.Name, OwnerName = item.Owner.UserName });
-            }
+            var userName = User.Identity?.Name;
+            if (string.IsNullOrEmpty(userName))
+                return Unauthorized();
 
-            return Ok(themesIdList);
+            var currentUser = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.UserName == userName);
+
+            if (currentUser == null)
+                return NotFound();
+
+            var themes = await _context.Themes
+                .AsNoTracking()
+                .Where(t => t.OwnerId == currentUser.Id
+                            || t.ThemeSubscribers.Any(s => s.Id == currentUser.Id))
+                .Select(t => new ThemeDto
+                {
+                    Id = t.Id,
+                    Name = t.Name,
+                    OwnerName = t.OwnerName
+                })
+                .OrderBy(t => t.OwnerName)
+                .ThenBy(t => t.Name)
+                .ToListAsync();
+
+            return Ok(themes);
         }
     }
 }

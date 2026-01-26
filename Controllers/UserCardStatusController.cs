@@ -1,4 +1,5 @@
-﻿using LanguageCards.Dto;
+﻿using LanguageCards.Api.Dto;
+using LanguageCards.Dto;
 using LanguageCards.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -42,7 +43,11 @@ namespace LanguageCards.Controllers
                 _context.SaveChanges();
             }
 
-            return Ok();
+            return Ok(new ApiResponseDto<object>
+            {
+                Success = true,
+                Message = "Обновление статуса карты прошло успешно.",
+            });
         }
 
 

@@ -136,13 +136,14 @@ namespace LanguageCards.Controllers
                     {
                         Success = false,
                         Message = $"В данной теме больше нет неизученных карточек",
+                        Status = 404,
                     }
                 );
             }
             card.Theme.LastCardId = card.Id;
             _context.SaveChanges();
 
-            return Ok(new ApiResponseDto<object> { Data = card, Success = true });
+            return Ok(new ApiResponseDto<object> { Data = card, Success = true, Status = 200 });
         }
 
         [HttpGet]
@@ -165,13 +166,13 @@ namespace LanguageCards.Controllers
             {
                 _context.Themes.Remove(theme);
                 _context.SaveChanges();
-                return Ok("Тема и её содержимое были успешно удалены");
+                return Ok(new ApiResponseDto<object> { Status = 200 });
             }
             else if (theme == null)
             {
                 return BadRequest("Данной темы не существует");
             }
-            return BadRequest("Текущий пользователь не является владельцем темы");
+            return BadRequest(new ApiResponseDto<object> { Status = 400 });
         }
 
         [HttpPut("{id}")]
@@ -214,17 +215,29 @@ namespace LanguageCards.Controllers
         {
             try
             {
-                var userId = _context
-                    .Users.FirstOrDefault(u => u.UserName == User.Identity.Name)
-                    .Id;
+                var user = await _context
+                    .Users.AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.UserName == User.Identity.Name);
+
+                if (user == null)
+                {
+                    return Unauthorized(
+                        new ApiResponseDto<object>
+                        {
+                            Success = false,
+                            ValidationError = "Текущий пользователь не найден.",
+                        }
+                    );
+                }
+
                 var query = _context.UserCardsStatuses.Where(ucs =>
-                    ucs.UserId == userId && ucs.Card.ThemeId == themeId
+                    ucs.UserId == user.Id && ucs.Card.ThemeId == themeId
                 );
 
                 await query.ExecuteUpdateAsync(ucs =>
                     ucs.SetProperty(ucs => ucs.Status, CardStatus.NotStudied)
                 );
-                return Ok(new ApiResponseDto<object> { Success = true });
+                return Ok(new ApiResponseDto<object> { Success = true, Status = 200 });
             }
             catch (Exception ex)
             {
