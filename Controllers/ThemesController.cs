@@ -121,7 +121,9 @@ namespace LanguageCards.Controllers
                     && (
                         !_context.UserCardsStatuses.Any(u => u.CardId == card.Id)
                         || _context.UserCardsStatuses.Any(u =>
-                            u.CardId == card.Id && u.Status == CardStatus.NotStudied
+                            u.CardId == card.Id
+                            && u.Status == CardStatus.NotStudied
+                            && u.User.UserName == User.Identity.Name
                         )
                     )
                     && card.ThemeId == themeId
@@ -143,7 +145,14 @@ namespace LanguageCards.Controllers
             card.Theme.LastCardId = card.Id;
             _context.SaveChanges();
 
-            return Ok(new ApiResponseDto<object> { Data = card, Success = true, Status = 200 });
+            return Ok(
+                new ApiResponseDto<object>
+                {
+                    Data = card,
+                    Success = true,
+                    Status = 200,
+                }
+            );
         }
 
         [HttpGet]

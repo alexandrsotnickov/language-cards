@@ -64,7 +64,7 @@ namespace LanguageCards.Controllers
             }
             else
             {
-                return NotFound();
+                return NotFound(new ApiResponseDto<object> { Status = 404, Message = "хз" });
             }
 
 

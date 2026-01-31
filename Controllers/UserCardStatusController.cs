@@ -24,9 +24,10 @@ namespace LanguageCards.Controllers
         [HttpPost]
         public IActionResult UpdateUserCardStatus([FromBody] CardStatusDto cardstatusDto)
         {
-            if (_context.UserCardsStatuses.Any(uc => uc.CardId == cardstatusDto.CardId))
+            var userId = _context.Users.FirstOrDefault(u => u.UserName == User.Identity.Name).Id;
+            if (_context.UserCardsStatuses.Any(uc => uc.CardId == cardstatusDto.CardId && uc.UserId == userId))
             {
-                var userId = _context.Users.FirstOrDefault(u => u.UserName == User.Identity.Name).Id;
+
                 var userCard = _context.UserCardsStatuses.Find(userId, cardstatusDto.CardId);
                 userCard.Status = cardstatusDto.Status;
                 _context.SaveChanges();
