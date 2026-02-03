@@ -114,24 +114,35 @@ namespace LanguageCards.Controllers
         [HttpGet("{themeId}/random-card")]
         public IActionResult GetRandomCard(int themeId)
         {
-            var card = _context
-                .Cards.Include(c => c.Theme)
-                .Where(card =>
-                    card.Theme.LastCardId != card.Id
-                    && (
-                        !_context.UserCardsStatuses.Any(u => u.CardId == card.Id)
+            var successResponse = new ApiResponseDto<object> { Success = true, Status = 200 };
+
+            var notStudiedCards = _context
+                .Cards.Include(t => t.Theme)
+                .Where(c =>
+                    (
+                        !_context.UserCardsStatuses.Any(u => u.CardId == c.Id)
                         || _context.UserCardsStatuses.Any(u =>
-                            u.CardId == card.Id
+                            u.CardId == c.Id
                             && u.Status == CardStatus.NotStudied
                             && u.User.UserName == User.Identity.Name
                         )
                     )
-                    && card.ThemeId == themeId
-                )
+                    && c.ThemeId == themeId
+                );
+
+            int countNotStudiedCards = notStudiedCards.Count();
+
+            if (countNotStudiedCards == 1)
+            {
+                successResponse.Data = notStudiedCards.FirstOrDefault();
+                return Ok(successResponse);
+            }
+
+            var randomCard = notStudiedCards
                 .OrderBy(card => EF.Functions.Random())
                 .FirstOrDefault();
 
-            if (card == null)
+            if (randomCard == null)
             {
                 return NotFound(
                     new ApiResponseDto<object>
@@ -142,17 +153,10 @@ namespace LanguageCards.Controllers
                     }
                 );
             }
-            card.Theme.LastCardId = card.Id;
+            randomCard.Theme.LastCardId = randomCard.Id;
             _context.SaveChanges();
-
-            return Ok(
-                new ApiResponseDto<object>
-                {
-                    Data = card,
-                    Success = true,
-                    Status = 200,
-                }
-            );
+            successResponse.Data = randomCard;
+            return Ok(successResponse);
         }
 
         [HttpGet]
