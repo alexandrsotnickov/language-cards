@@ -18,17 +18,26 @@ Language Cards API — backend REST API для приложения изучен
 - Entity Framework Core
 - PostgreSQL
 
-##Требования
+## Требования
 
 -Windows 10 Pro/Enterprise/Home 22H2 (19045) и выше
 -Ubuntu 22.04 LTS и выше
 
-## Installation
+## Развертывание (для Ubuntu)
+
+Установка Docker
+```bash
+sudo apt install -y docker.io docker-compose
+```
+Добавление пользователя в docker-группу
 
 ```bash
-git clone https://github.com/alexandrsotnickov/language-cards.git
-cd language-cards
-dotnet restore
+sudo usermod -aG docker $USER
+```
+Проверка работоспособности docker
+
+```bash
+docker --version
 ```
 
 ## Run
