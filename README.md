@@ -20,8 +20,8 @@ Language Cards API — backend REST API для приложения изучен
 
 ## Требования
 
--Windows 10 Pro/Enterprise/Home 22H2 (19045) и выше
--Ubuntu 22.04 LTS и выше
+- Windows 10 Pro/Enterprise/Home 22H2 (19045) и выше
+- Ubuntu 22.04 LTS и выше
 
 ## Развертывание (для Ubuntu)
 
@@ -29,7 +29,7 @@ Language Cards API — backend REST API для приложения изучен
 ```bash
 sudo apt install -y docker.io docker-compose
 ```
-Добавление пользователя в docker-группу
+Добавление пользователя в docker-группу (после этого перезагрузить ПК/VM)
 
 ```bash
 sudo usermod -aG docker $USER
@@ -39,7 +39,13 @@ sudo usermod -aG docker $USER
 ```bash
 docker --version
 ```
+Клонировать репозиторий
 
+```bash
+cd ~
+git clone https://github.com/<REPO>
+cd REPO
+```
 ## Run
 ```bash
 dotnet run
