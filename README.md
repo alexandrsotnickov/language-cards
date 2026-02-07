@@ -12,8 +12,9 @@ Language Cards API — backend REST API для приложения изучен
 
 ## Стек
 
-- ASP.NET Core
 - C#
+- .NET 8
+- ASP.NET Core
 - REST API
 - Entity Framework Core
 - PostgreSQL
@@ -25,7 +26,15 @@ Language Cards API — backend REST API для приложения изучен
 
 ## Развертывание (для Ubuntu)
 
+Установите pip3 для python (docker-compose без этого может не работать) 
+
+```bash
+sudo apt install python3-pip
+pip3 --version
+```
+
 Установка Docker
+
 ```bash
 sudo apt install -y docker.io docker-compose
 ```
@@ -34,10 +43,11 @@ sudo apt install -y docker.io docker-compose
 ```bash
 sudo usermod -aG docker $USER
 ```
-Проверка работоспособности docker
+Проверка работоспособности docker и docker-compose
 
 ```bash
 docker --version
+docker-compose -v
 ```
 Клонировать репозиторий
 
