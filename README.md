@@ -3,15 +3,14 @@
 Language Cards API — backend REST API для приложения изучения языков на основе карточек.  
 Сервис отвечает за управление карточками, пользователями и учебным прогрессом.
 
-## Features
+## Особенности
 
 - REST API для языковых карточек
-- CRUD-операции
 - Поддержка многопользовательского режима
 - Подготовка к аутентификации и авторизации
-- Валидация входных данных
+- Управление темами пользователей, подписками на них, карточками в темах
 
-## Tech Stack
+## Стек
 
 - ASP.NET Core
 - C#
@@ -19,10 +18,10 @@ Language Cards API — backend REST API для приложения изучен
 - Entity Framework Core
 - PostgreSQL
 
-## Requirements
+##Требования
 
-- .NET SDK 7.0+  
-- PostgreSQL
+-Windows 10 Pro/Enterprise/Home 22H2 (19045) и выше
+-Ubuntu 22.04 LTS и выше
 
 ## Installation
 
