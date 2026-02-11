@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: languagecards-api
+    container_name: languagecards-api
+    ports:
+      - "80:8080"  
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=db;Database=languagecardsdb;Username=postgres;Password=mysecretpassword
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  
+  db:
+    image: postgres:16-alpine
+    container_name: languagecards-db
+    ports:
+      - "81:5432"
+    environment:
+      POSTGRES_DB: language_cards
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
