@@ -9,4 +9,4 @@ RUN dotnet publish "LanguageCards.Api.csproj" -c Release -o /app
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=build /app .
-ENTRYPOINT ["dotnet", "LanguageCards.Api.dll"]﻿
+ENTRYPOINT ["dotnet", "LanguageCards.Api.dll"]
