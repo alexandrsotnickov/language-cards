@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  
   api:
     build:
       context: .
@@ -9,15 +8,24 @@ services:
     image: languagecards-api
     container_name: languagecards-api
     ports:
-      - "80:8080"  
+      - "80:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Host=db;Database=languagecardsdb;Username=postgres;Password=mysecretpassword
+      - ConnectionStrings__DefaultConnection=Host=db;Database=language_cards;Username=postgres;Password=root
     depends_on:
       - db
     restart: unless-stopped
-
-  
+    command: >
+      /bin/sh -c "
+        echo 'Waiting for DB to be ready...' &&
+        until pg_isready -h db -U postgres; do
+          sleep 2;
+        done &&
+        echo 'Applying EF migrations...' &&
+        dotnet ef database update --no-build &&
+        echo 'Starting API...' &&
+        dotnet LanguageCards.Api.dll
+      "
   db:
     image: postgres:16-alpine
     container_name: languagecards-db
